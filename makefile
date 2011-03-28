@@ -18,7 +18,8 @@
 srcs=object.c list.c map.c
 objs=object.o list.o map.o
 
-test_srcs=tests.c tests/list_test.c tests/primitive_test.c tests/map_test.c
+test_srcs=tests.c tests/list_test.c tests/primitive_test.c tests/map_test.c \
+          tests/json_deserialize_test.c
 all:
 	gcc ${srcs} -c -I/usr/include/unicode
 

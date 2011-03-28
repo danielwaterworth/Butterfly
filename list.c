@@ -23,7 +23,7 @@
 #include "list.h"
 
 static list *create_leaf(object *obj) {
-    list *result = malloc(1 + sizeof(object *));
+    list *result = malloc(sizeof(list));
     result->type = LEAF;
     result->data.leaf = object_copy(obj);
     return result;
@@ -53,7 +53,7 @@ static void list_ptr_set(list **child, int32_t i, object *obj) {
             object_free((*child)->data.leaf);
             (*child)->data.leaf = object_copy(obj);
         } else {
-            list *branch = malloc(1 + sizeof(finger_branch));
+            list *branch = malloc(sizeof(list));
             branch->type = BRANCH;
             branch->data.branch.left = *child;
             branch->data.branch.right = create_leaf(obj);
@@ -115,7 +115,7 @@ static void list_ptr_insert_at(list **l, int32_t i, object *obj) {
             list_insert_at(&(*l)->data.branch, i, obj);
         } else {
             list *leaf = *l;
-            *l = malloc(1 + sizeof(finger_branch));
+            *l = malloc(sizeof(list));
             (*l)->type = BRANCH;
             (*l)->data.branch.nodes = 2;
             (*l)->data.branch.left = create_leaf(obj);
@@ -188,14 +188,11 @@ void list_remove(finger_branch *branch, int32_t i) {
 }
 
 list *list_copy(list *l) {
-    list *res;
+    list *res = malloc(sizeof(list));
+    res->type = l->type;
     if (l->type == LEAF) {
-        res = malloc(1 + sizeof(object *));
-        res->type = LEAF;
         res->data.leaf = object_copy(l->data.leaf);
     } else {
-        res = malloc(1 + sizeof(finger_branch));
-        res->type = BRANCH;
         res->data.branch.nodes = l->data.branch.nodes;
         res->data.branch.left = list_copy(l->data.branch.left);
         res->data.branch.right = list_copy(l->data.branch.right);

@@ -71,4 +71,9 @@ int64_t object_int_get(object *);
 double object_float_get(object *);
 bool object_bool_get(object *);
 
+UChar *object_join(object *);
+
+UChar *object_to_json(object *, bool);
+object *object_from_json(UChar *);
+
 #endif

@@ -19,23 +19,4 @@
 
 #include "check.h"
 
-#include "list_test.h"
-#include "map_test.h"
-#include "primitive_test.h"
-#include "json_deserialize_test.h"
-
-int main() {
-    int number_failed;
-    Suite *s = suite_create("Main");
-    
-    suite_add_tcase(s, list_test_case());
-    suite_add_tcase(s, map_test_case());
-    suite_add_tcase(s, primitive_test_case());
-    suite_add_tcase(s, json_deserialize_test_case());
-    
-    SRunner *sr = srunner_create(s);
-    srunner_run_all(sr, CK_NORMAL);
-    number_failed = srunner_ntests_failed(sr);
-    srunner_free(sr);
-    return (number_failed == 0) ? 0 : 1;
-}
+TCase *json_deserialize_test_case();
