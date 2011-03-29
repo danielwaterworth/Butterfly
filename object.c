@@ -373,7 +373,7 @@ typedef struct {
     uint32_t i;
 } parse_result;
 
-parse_result object_from_json_int(UChar *str);
+parse_result object_from_json_int(UChar *str, uint32_t);
 
 static parse_result parse_string(uint32_t i, uint32_t sz, UChar *str) {
     uint32_t n = 0, m = 0;
@@ -502,7 +502,7 @@ static parse_result parse_map(uint32_t i, uint32_t sz, UChar *str) {
             parse_result res = {NULL, i};
             return res;
         }
-        parse_result val = object_from_json_int(str + i);
+        parse_result val = object_from_json_int(str + i, sz - 1);
         i += val.i;
         if (val.obj == NULL) {
             object_free(m);
@@ -547,7 +547,7 @@ static parse_result parse_list(uint32_t i, uint32_t sz, UChar *str) {
         return res;
     }
     while (1) {
-        parse_result item = object_from_json_int(str + i);
+        parse_result item = object_from_json_int(str + i, sz - i);
         i += item.i;
         if (item.obj == NULL) {
             object_free(lst);
@@ -681,8 +681,8 @@ static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
     return res;
 }
 
-parse_result object_from_json_int(UChar *str) {
-    uint32_t i=0, sz=u_strlen(str);
+parse_result object_from_json_int(UChar *str, uint32_t sz) {
+    uint32_t i=0;
     if (i >= sz) {
         parse_result res = {NULL, i};
         return res;
@@ -727,6 +727,6 @@ parse_result object_from_json_int(UChar *str) {
 }
 
 object *object_from_json(UChar *str) {
-    parse_result res = object_from_json_int(str);
+    parse_result res = object_from_json_int(str, u_strlen(str));
     return res.obj;
 }
