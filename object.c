@@ -472,14 +472,14 @@ static parse_result parse_string(uint32_t i, uint32_t sz, UChar *str) {
 
 static parse_result parse_map(uint32_t i, uint32_t sz, UChar *str) {
     object *m = object_map();
-    uint32_t next = i;
     if (i >= sz) {
+        object_free(m);
         parse_result res = {NULL, i};
         return res;
     }
-    UChar32 c = get_after_ws(str, &next, &sz);
+    UChar32 c = get_after_ws(str, &i, &sz);
     if (c == '}') {
-        parse_result res = {m, next};
+        parse_result res = {m, i};
         return res;
     }
     while (1) {
@@ -488,7 +488,7 @@ static parse_result parse_map(uint32_t i, uint32_t sz, UChar *str) {
             parse_result res = {NULL, i};
             return res;
         }
-        parse_result key = parse_string(next, sz, str);
+        parse_result key = parse_string(i, sz, str);
         i = key.i;
         if (key.obj == NULL || i >= sz) {
             object_free(m);
@@ -503,25 +503,31 @@ static parse_result parse_map(uint32_t i, uint32_t sz, UChar *str) {
             return res;
         }
         parse_result val = object_from_json_int(str + i);
+        i += val.i;
         if (val.obj == NULL) {
             object_free(m);
             object_free(key.obj);
-            parse_result res = {NULL, i + val.i};
+            parse_result res = {NULL, i};
             return res;
         }
         object_map_set(m, key.obj, val.obj);
         object_free(key.obj);
         object_free(val.obj);
-        i += val.i;
-        c = get_after_ws(str, &i, &sz);
-        if (c == '}') {
-            break;
-        }
-        if (c != ',') {
+        if (i >= sz) {
             object_free(m);
             parse_result res = {NULL, i};
             return res;
         }
+        c = get_after_ws(str, &i, &sz);
+        if (c == '}') {
+            break;
+        }
+        if (c != ',' || i >= sz) {
+            object_free(m);
+            parse_result res = {NULL, i};
+            return res;
+        }
+        c = get_after_ws(str, &i, &sz);
     }
     parse_result res = {m, i};
     return res;
@@ -530,6 +536,11 @@ static parse_result parse_map(uint32_t i, uint32_t sz, UChar *str) {
 static parse_result parse_list(uint32_t i, uint32_t sz, UChar *str) {
     object *lst = object_list();
     uint32_t next = i;
+    if (i >= sz) {
+        object_free(lst);
+        parse_result res = {NULL, i};
+        return res;
+    }
     UChar32 c = get_after_ws(str, &next, &sz);
     if (c == ']') {
         parse_result res = {lst, next};
@@ -546,6 +557,11 @@ static parse_result parse_list(uint32_t i, uint32_t sz, UChar *str) {
         object_list_set(lst, object_list_length(lst), item.obj);
         object_free(item.obj);
         
+        if (i >= sz) {
+            object_free(lst);
+            parse_result res = {NULL, i};
+            return res;
+        }
         c = get_after_ws(str, &i, &sz);
         
         if (c == ']') {
@@ -561,49 +577,36 @@ static parse_result parse_list(uint32_t i, uint32_t sz, UChar *str) {
     return res;
 }
 
-typedef struct {
-    int64_t n;
-    uint32_t i;
-} int_result;
-
-static int_result parse_int(uint32_t i, uint32_t sz, UChar *str) {
-    
-}
-
 static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
     int64_t out = 0;
     bool negative = false;
-    bool has_number = false;
     if (c == '-') {
         negative = true;
-    } else {
-        out = c - '0';
-        has_number = true;
+        if (i >= sz) {
+            parse_result res = {NULL, i};
+            return res;
+        }
+        c = get_next(str, &i, &sz);
     }
     if (c != '0') {
         while (1) {
+            if (c >= '0' && c <= '9') {
+                out *= 10;
+                out += c - '0';
+            } else {
+                break;
+            }
             if (i >= sz) {
                 break;
             }
             c = get_next(str, &i, &sz);
-            if (c >= '0' && c <= '9') {
-                out *= 10;
-                out += c - '0';
-                has_number = true;
-            } else {
-                break;
-            }
         }
-    }
-    if (!has_number) {
-        parse_result res = {NULL, i};
-            return res;
     }
     if (c != '.' && c != 'e' && c != 'E') {
         if (negative) {
             out *= -1;
         }
-        parse_result res = {object_int(out), i};
+        parse_result res = {object_int(out), i - 1};
         return res;
     }
     double d = out;
@@ -627,7 +630,7 @@ static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
         }
         if (mul >= 0.09) {
             parse_result res = {NULL, i};
-        return res;
+            return res;
         }
     }
     if (c == 'e' || c == 'E') {
@@ -636,10 +639,20 @@ static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
             parse_result res = {NULL, i};
             return res;
         }
-        /* TODO: negative powers */
+        c = get_next(str, &i, &sz);
+        bool e_negative = false;
+        if (c == '-') {
+            e_negative = true;
+        }
+        if (c == '-' || c == '+') {
+            if (i >= sz) {
+                parse_result res = {NULL, i};
+                return res;
+            }
+            c = get_next(str, &i, &sz);
+        }
         bool e_num = false;
         while (1) {
-            c = get_next(str, &i, &sz);
             if (c >= '0' && c <= '9') {
                 e *= 10;
                 e += c - '0';
@@ -650,17 +663,21 @@ static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
             if (i >= sz) {
                 break;
             }
+            c = get_next(str, &i, &sz);
         }
         if (!e_num) {
             parse_result res = {NULL, i};
             return res;
+        }
+        if (e_negative) {
+            e *= -1;
         }
         d *= pow(10, e);
     }
     if (negative) {
         d *= -1;
     }
-    parse_result res = {object_float(d), i};
+    parse_result res = {object_float(d), i-1};
     return res;
 }
 

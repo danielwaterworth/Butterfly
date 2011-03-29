@@ -17,27 +17,20 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "check.h"
+#include <math.h>
+#include <stdlib.h>
 
-#include "list_test.h"
-#include "map_test.h"
-#include "primitive_test.h"
-#include "json_deserialize_test.h"
 #include "json_serialize_test.h"
+#include "object.h"
 
-int main() {
-    int number_failed;
-    Suite *s = suite_create("Main");
-    
-    suite_add_tcase(s, list_test_case());
-    suite_add_tcase(s, map_test_case());
-    suite_add_tcase(s, primitive_test_case());
-    suite_add_tcase(s, json_deserialize_test_case());
-    suite_add_tcase(s, json_serialize_test_case());
-    
-    SRunner *sr = srunner_create(s);
-    srunner_run_all(sr, CK_NORMAL);
-    number_failed = srunner_ntests_failed(sr);
-    srunner_free(sr);
-    return (number_failed == 0) ? 0 : 1;
+START_TEST (test_null) {
+    object *obj = object_none();
+    U_STRING(none_str, "null", 4);
+    fail_unless(u_strcmp(none_str, object_to_json(obj, false)) == 0, NULL);
+} END_TEST
+
+TCase *json_serialize_test_case() {
+    TCase *tc = tcase_create("json_serialization");
+    tcase_add_test(tc, test_null);
+    return tc;
 }

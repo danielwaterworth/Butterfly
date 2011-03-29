@@ -113,6 +113,30 @@ START_TEST (test_list_2) {
     object_free(obj);
 } END_TEST
 
+START_TEST (test_list_3) {
+    U_STRING(list_test, "[1]", 3);
+    object *obj = object_from_json(list_test);
+    fail_unless(obj != NULL, NULL);
+} END_TEST
+
+START_TEST (test_list_4) {
+    U_STRING(list_test, "[1.5]", 5);
+    object *obj = object_from_json(list_test);
+    fail_unless(obj != NULL, NULL);
+} END_TEST
+
+START_TEST (test_list_5) {
+    U_STRING(list_test, "[1e1]", 5);
+    object *obj = object_from_json(list_test);
+    fail_unless(obj != NULL, NULL);
+} END_TEST
+
+START_TEST (test_list_6) {
+    U_STRING(list_test, "[1.5e1]", 7);
+    object *obj = object_from_json(list_test);
+    fail_unless(obj != NULL, NULL);
+} END_TEST
+
 START_TEST (test_int) {
     U_STRING(int_test, "105", 3);
     object *obj = object_from_json(int_test);
@@ -211,14 +235,24 @@ START_TEST (test_map_2) {
     object_free(obj);
 } END_TEST
 
+START_TEST (test_map_3) {
+    U_STRING(big_str, "{\"hello\":{\"something\":\"yeah\"}, \"num\":1.1}", 41);
+    object *obj = object_from_json(big_str);
+    fail_unless(obj != NULL, NULL);
+} END_TEST
+
 TCase *json_deserialize_test_case() {
-    TCase *tc = tcase_create("json");
+    TCase *tc = tcase_create("json_deserialization");
     tcase_add_test(tc, test_null);
     tcase_add_test(tc, test_true);
     tcase_add_test(tc, test_false);
     tcase_add_test(tc, test_whitespace);
     tcase_add_test(tc, test_list_1);
     tcase_add_test(tc, test_list_2);
+    tcase_add_test(tc, test_list_3);
+    tcase_add_test(tc, test_list_4);
+    tcase_add_test(tc, test_list_5);
+    tcase_add_test(tc, test_list_6);
     tcase_add_test(tc, test_int);
     tcase_add_test(tc, test_float_1);
     tcase_add_test(tc, test_float_2);
@@ -229,5 +263,6 @@ TCase *json_deserialize_test_case() {
     tcase_add_test(tc, test_string_2);
     tcase_add_test(tc, test_map_1);
     tcase_add_test(tc, test_map_2);
+    tcase_add_test(tc, test_map_3);
     return tc;
 }
