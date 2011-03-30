@@ -25,48 +25,48 @@
 
 START_TEST (test_null) {
     object *obj = object_none();
-    U_STRING(none_str, "null", 4);
-    fail_unless(u_strcmp(none_str, object_to_json(obj, false)) == 0, NULL);
+    STR_INIT(none_str, "null", 4);
+    fail_unless(str_strcmp(none_str, object_to_json(obj, false)) == 0, NULL);
 } END_TEST
 
 START_TEST (test_true) {
     object *obj = object_bool(true);
-    U_STRING(true_str, "true", 4);
-    fail_unless(u_strcmp(true_str, object_to_json(obj, false)) == 0, NULL);
+    STR_INIT(true_str, "true", 4);
+    fail_unless(str_strcmp(true_str, object_to_json(obj, false)) == 0, NULL);
 } END_TEST
 
 START_TEST (test_false) {
     object *obj = object_bool(false);
-    U_STRING(false_str, "false", 5);
-    fail_unless(u_strcmp(false_str, object_to_json(obj, false)) == 0, NULL);
+    STR_INIT(false_str, "false", 5);
+    fail_unless(str_strcmp(false_str, object_to_json(obj, false)) == 0, NULL);
 } END_TEST
 
 START_TEST (test_int_1) {
     object *obj = object_int(5234);
-    U_STRING(int_str, "5234", 4);
-    UChar *res = object_to_json(obj, false);
-    fail_unless(u_strcmp(int_str, res) == 0, NULL);
+    STR_INIT(int_str, "5234", 4);
+    char_t *res = object_to_json(obj, false);
+    fail_unless(str_strcmp(int_str, res) == 0, NULL);
 } END_TEST
 
 START_TEST (test_int_2) {
     object *obj = object_int(-5234);
-    U_STRING(int_str, "-5234", 5);
-    UChar *res = object_to_json(obj, false);
-    fail_unless(u_strcmp(int_str, res) == 0, NULL);
+    STR_INIT(int_str, "-5234", 5);
+    char_t *res = object_to_json(obj, false);
+    fail_unless(str_strcmp(int_str, res) == 0, NULL);
 } END_TEST
 
 START_TEST (test_int_3) {
     object *obj = object_int(0);
-    U_STRING(int_str, "0", 1);
-    fail_unless(u_strcmp(int_str, object_to_json(obj, false)) == 0, NULL);
+    STR_INIT(int_str, "0", 1);
+    fail_unless(str_strcmp(int_str, object_to_json(obj, false)) == 0, NULL);
 } END_TEST
 
 START_TEST (test_str_1) {
-    U_STRING(str_test, "test\n\"\\", 7);
+    STR_INIT(str_test, "test\n\"\\", 7);
     object *obj = object_str(str_test);
-    UChar *json_str = object_to_json(obj, false);
-    U_STRING(json_actual, "\"test\\n\\\"\\\\\"", 12);
-    fail_unless(u_strcmp(json_str, json_actual) == 0, NULL);
+    char_t *json_str = object_to_json(obj, false);
+    STR_INIT(json_actual, "\"test\\n\\\"\\\\\"", 12);
+    fail_unless(str_strcmp(json_str, json_actual) == 0, NULL);
 } END_TEST
 
 TCase *json_serialize_test_case() {

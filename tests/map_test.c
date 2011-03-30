@@ -23,8 +23,8 @@
 START_TEST (test_1) {
     object *obj = object_map();
     
-    U_STRING(hello, "hello", 5);
-    U_STRING(world, "world", 5);
+    STR_INIT(hello, "hello", 5);
+    STR_INIT(world, "world", 5);
     
     object *key = object_str(hello);
     object *val = object_str(world);

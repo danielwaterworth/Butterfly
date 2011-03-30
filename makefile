@@ -15,15 +15,16 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-srcs=object.c list.c map.c
-objs=object.o list.o map.o
+srcs=object.c list.c map.c string_type.c
+objs=object.o list.o map.o string_type.o
 
 test_srcs=tests.c tests/list_test.c tests/primitive_test.c tests/map_test.c \
-          tests/json_deserialize_test.c tests/json_serialize_test.c
+          tests/json_deserialize_test.c tests/json_serialize_test.c \
+          tests/string_test.c
 all:
 	gcc ${srcs} -c -I/usr/include/unicode
 
 check:
 	gcc ${srcs} ${test_srcs} -I/usr/include/unicode -I./ -I./tests/ -o test \
-	-licui18n -lcheck
+	-licui18n -lcheck -DBUTTERFLY_USE_ICU
 	./test

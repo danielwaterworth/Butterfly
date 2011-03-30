@@ -54,11 +54,11 @@ START_TEST (float_test) {
 } END_TEST
 
 START_TEST (str_test) {
-    U_STRING(a, "test", 4);
+    STR_INIT(a, "test", 4);
     object *obj = object_str(a);
     fail_unless(object_type(obj) == OBJECT_STR, NULL);
-    UChar *str = object_str_get(obj);
-    fail_unless(u_strcmp(str, a) == 0, NULL);
+    char_t *str = object_str_get(obj);
+    fail_unless(str_strcmp(str, a) == 0, NULL);
     free(str);
     object_free(obj);
 } END_TEST

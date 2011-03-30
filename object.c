@@ -26,13 +26,6 @@
 #include "list.h"
 #include "map.h"
 
-static UChar *u_strdup(UChar *in) {
-    uint32_t len = u_strlen(in) + 1;
-    UChar *result = malloc(sizeof(UChar) * len);
-    u_memcpy(result, in, len);
-    return result;
-}
-
 struct object {
     unsigned char type;
     union {
@@ -40,7 +33,7 @@ struct object {
         map m;
         int64_t n;
         double f;
-        UChar *str;
+        char_t *str;
         unsigned char b;
     } data;
 };
@@ -71,10 +64,10 @@ object *object_list() {
     return obj;
 }
 
-object *object_str(UChar *str) {
+object *object_str(char_t *str) {
     object *obj = malloc(sizeof(object));
     obj->type = OBJECT_STR;
-    obj->data.str = u_strdup(str);
+    obj->data.str = str_strdup(str);
     return obj;
 }
 
@@ -137,7 +130,7 @@ bool object_hashable(object *obj) {
 
 static uint32_t object_str_hash(object *obj) {
     uint32_t out = 5381;
-    size_t len = u_strlen(obj->data.str);
+    size_t len = str_strlen(obj->data.str);
     size_t i;
     
     for (i = 0; i < len; ++i) {
@@ -177,7 +170,7 @@ bool object_eq(object *a, object *b) {
         case OBJECT_INT:
             return a->data.n == b->data.n;
         case OBJECT_STR:
-            return u_strcmp(a->data.str, b->data.str) == 0;
+            return str_strcmp(a->data.str, b->data.str) == 0;
     };
 }
 
@@ -241,9 +234,9 @@ double object_float_get(object *obj) {
     return obj->data.f;
 }
 
-UChar *object_str_get(object *obj) {
+char_t *object_str_get(object *obj) {
     assert(obj->type == OBJECT_STR);
-    return u_strdup(obj->data.str);
+    return str_strdup(obj->data.str);
 }
 
 void object_list_set(object *obj, int32_t i, object *value) {
@@ -285,7 +278,7 @@ object *object_map_get(object *obj, object *key) {
 static size_t object_join_sz(object *obj) {
     assert(obj->type == OBJECT_LIST || obj->type == OBJECT_STR);
     if (obj->type == OBJECT_STR) {
-        return u_strlen(obj->data.str);
+        return str_strlen(obj->data.str);
     } else {
         size_t len = 0;
         int32_t i;
@@ -298,10 +291,10 @@ static size_t object_join_sz(object *obj) {
     }
 }
 
-static void object_join_write(object *obj, UChar *str) {
+static void object_join_write(object *obj, char_t *str) {
     assert(obj->type == OBJECT_LIST || obj->type == OBJECT_STR);
     if (obj->type == OBJECT_STR) {
-        u_strcpy(str, obj->data.str);
+        str_strcpy(str, obj->data.str);
     } else {
         size_t i;
         for (i = 0; i < object_list_length(obj); ++i) {
@@ -313,18 +306,12 @@ static void object_join_write(object *obj, UChar *str) {
     }
 }
 
-UChar *object_join(object *obj) {
+char_t *object_join(object *obj) {
     assert(obj->type == OBJECT_LIST || obj->type == OBJECT_STR);
     size_t len = object_join_sz(obj);
-    UChar *res = malloc(sizeof(UChar) * len + 1);
+    char_t *res = malloc(sizeof(char_t) * len + 1);
     object_join_write(obj, res);
     return res;
-}
-
-static UChar32 get_next(UChar *str, uint32_t *i, uint32_t *sz) {
-    UChar32 c;
-    U16_NEXT(str, *i, *sz, c);
-    return c;
 }
 
 static uint32_t int_to_json_len(int64_t i) {
@@ -342,7 +329,7 @@ static uint32_t int_to_json_len(int64_t i) {
     return len;
 }
 
-static uint32_t int_to_json_write(UChar *str, int64_t i) {
+static uint32_t int_to_json_write(char_t *str, int64_t i) {
     if (i == 0) {
         *str = '0';
         return 1;
@@ -369,51 +356,51 @@ static uint32_t int_to_json_write(UChar *str, int64_t i) {
 }
 
 static uint32_t str_to_json_len(object *obj) {
-    UChar *str = object_str_get(obj);
-    uint32_t sz = u_strlen(str);
+    char_t *str = object_str_get(obj);
+    uint32_t sz = str_strlen(str);
     uint32_t len = 2;
     uint32_t i = 0;
     while (i < sz) {
-        UChar32 c = get_next(str, &i, &sz);
+        uint32_t c = str_next(str, &i, sz);
         if (c == '\\' || c == '\n' || c == '"' || c == '\t') {
             len += 2;
         } else {
-            len += U16_LENGTH(c);
+            len += str_encoding_length(c);
         }
     }
     free(str);
     return len;
 }
 
-static uint32_t str_to_json_write(UChar *str, object *obj) {
+static uint32_t str_to_json_write(char_t *str, object *obj) {
     uint32_t i = 0;
     uint32_t j = 0;
-    U16_APPEND_UNSAFE(str, j, '"');
-    UChar *val = object_str_get(obj);
-    uint32_t sz = u_strlen(val);
+    str_append(str, &j, '"');
+    char_t *val = object_str_get(obj);
+    uint32_t sz = str_strlen(val);
     while (i < sz) {
-        UChar32 c = get_next(val, &i, &sz);
+        uint32_t c = str_next(val, &i, sz);
         if (c == '\\' || c == '\n' || c == '"' || c == '\t') {
-            U16_APPEND_UNSAFE(str, j, '\\');
+            str_append(str, &j, '\\');
             switch (c) {
                 case '\\':
-                    U16_APPEND_UNSAFE(str, j, '\\');
+                    str_append(str, &j, '\\');
                     break;
                 case '\n':
-                    U16_APPEND_UNSAFE(str, j, 'n');
+                    str_append(str, &j, 'n');
                     break;
                 case '"':
-                    U16_APPEND_UNSAFE(str, j, '"');
+                    str_append(str, &j, '"');
                     break;
                 case '\t':
-                    U16_APPEND_UNSAFE(str, j, 't');
+                    str_append(str, &j, 't');
                     break;
             };
         } else {
-            U16_APPEND_UNSAFE(str, j, c);
+            str_append(str, &j, c);
         }
     }
-    U16_APPEND_UNSAFE(str, j, '"');
+    str_append(str, &j, '"');
     free(val);
     return j;
 }
@@ -422,7 +409,7 @@ static uint32_t float_to_json_len(double val) {
     
 }
 
-static uint32_t float_to_json_write(UChar *str, double val) {
+static uint32_t float_to_json_write(char_t *str, double val) {
     
 }
 
@@ -430,7 +417,7 @@ static uint32_t list_to_json_len(object *obj, bool pretty) {
     
 }
 
-static uint32_t list_to_json_write(UChar *str, object *obj, bool pretty) {
+static uint32_t list_to_json_write(char_t *str, object *obj, bool pretty) {
 
 }
 
@@ -438,7 +425,7 @@ static uint32_t map_to_json_len(object *obj, bool pretty) {
     
 }
 
-static uint32_t map_to_json_write(UChar *str, object *obj, bool pretty) {
+static uint32_t map_to_json_write(char_t *str, object *obj, bool pretty) {
     
 }
 
@@ -465,19 +452,19 @@ static uint32_t object_to_json_len(object *obj, bool pretty) {
     };
 }
 
-static uint32_t object_to_json_write(UChar *str, object *obj, bool pr) {
-    U_STRING(none_string, "null", 4);
-    U_STRING(true_string, "true", 4);
-    U_STRING(false_string, "false", 5);
+static uint32_t object_to_json_write(char_t *str, object *obj, bool pr) {
+    STR_INIT(none_string, "null", 4);
+    STR_INIT(true_string, "true", 4);
+    STR_INIT(false_string, "false", 5);
     switch (obj->type) {
         case OBJECT_NONE:
-            u_strcpy(str, none_string);
+            str_strcpy(str, none_string);
             break;
         case OBJECT_BOOL:
             if (object_bool_get(obj) == true) {
-                u_strcpy(str, true_string);
+                str_strcpy(str, true_string);
             } else {
-                u_strcpy(str, false_string);
+                str_strcpy(str, false_string);
             }
             break;
         case OBJECT_INT:
@@ -493,18 +480,18 @@ static uint32_t object_to_json_write(UChar *str, object *obj, bool pr) {
     };
 }
 
-UChar *object_to_json(object *obj, bool pretty) {
+char_t *object_to_json(object *obj, bool pretty) {
     uint32_t n = object_to_json_len(obj, pretty);
-    UChar *res = malloc(sizeof(UChar) * (n + 1));
+    char_t *res = malloc(sizeof(char_t) * (n + 1));
     object_to_json_write(res, obj, pretty);
     res[n] = '\0';
     return res;
 }
 
-static UChar32 get_after_ws(UChar *str, uint32_t *i, uint32_t *sz) {
-    UChar32 c = ' ';
-    while ((c == ' ' || c == '\t' || c == '\r' || c == '\n') && (*i < *sz)) {
-        c = get_next(str, i, sz);
+static uint32_t get_after_ws(char_t *str, uint32_t *i, uint32_t sz) {
+    uint32_t c = ' ';
+    while ((c == ' ' || c == '\t' || c == '\r' || c == '\n') && (*i < sz)) {
+        c = str_next(str, i, sz);
     }
     return c;
 }
@@ -514,27 +501,27 @@ typedef struct {
     uint32_t i;
 } parse_result;
 
-parse_result object_from_json_int(UChar *str, uint32_t);
+parse_result object_from_json_int(char_t *str, uint32_t);
 
-static parse_result parse_string(uint32_t i, uint32_t sz, UChar *str) {
+static parse_result parse_string(uint32_t i, uint32_t sz, char_t *str) {
     uint32_t n = 0, m = 0;
     uint32_t start = i;
-    UChar32 c;
+    uint32_t c;
     int stage;
-    UChar *string;
+    char_t *string;
     for (stage = 1; stage < 3; ++stage) {
         i = start;
         while (1) {
             if (i >= sz) {
                 break;
             }
-            c = get_next(str, &i, &sz);
+            c = str_next(str, &i, sz);
             if (c == '\\') {
                 if (i >= sz) {
                     parse_result res = {NULL, i};
                     return res;
                 }
-                c = get_next(str, &i, &sz);
+                c = str_next(str, &i, sz);
                 if ((c != '"') &&
                     (c != '\\') &&
                     (c != '/') &&
@@ -549,13 +536,13 @@ static parse_result parse_string(uint32_t i, uint32_t sz, UChar *str) {
                 }
                 if (c == 'u') {
                     int j;
-                    UChar32 construct = 0;
+                    uint32_t construct = 0;
                     for (j = 0; j < 4; ++j) {
                         if (i >= sz) {
                             parse_result res = {NULL, i};
                             return res;
                         }
-                        c = get_next(str, &i, &sz);
+                        c = str_next(str, &i, sz);
                         if ((c >= 'a' && c <= 'f') ||
                             (c >= 'A' && c <= 'F') ||
                             (c >= '0' && c <= '9')) {
@@ -595,13 +582,13 @@ static parse_result parse_string(uint32_t i, uint32_t sz, UChar *str) {
                 break;
             }
             if (stage == 1) {
-                n += U16_LENGTH(c);
+                n += str_encoding_length(c);
             } else {
-                U16_APPEND_UNSAFE(string, m, c);
+                str_append(string, &m, c);
             }
         }
         if (stage == 1) {
-            string = malloc(sizeof(UChar) * (n + 1));
+            string = malloc(sizeof(char_t) * (n + 1));
         } else {
             string[m] = 0;
         }
@@ -611,14 +598,14 @@ static parse_result parse_string(uint32_t i, uint32_t sz, UChar *str) {
     return res;
 }
 
-static parse_result parse_map(uint32_t i, uint32_t sz, UChar *str) {
+static parse_result parse_map(uint32_t i, uint32_t sz, char_t *str) {
     object *m = object_map();
     if (i >= sz) {
         object_free(m);
         parse_result res = {NULL, i};
         return res;
     }
-    UChar32 c = get_after_ws(str, &i, &sz);
+    uint32_t c = get_after_ws(str, &i, sz);
     if (c == '}') {
         parse_result res = {m, i};
         return res;
@@ -636,7 +623,7 @@ static parse_result parse_map(uint32_t i, uint32_t sz, UChar *str) {
             parse_result res = {NULL, i};
             return res;
         }
-        c = get_after_ws(str, &i, &sz);
+        c = get_after_ws(str, &i, sz);
         if (c != ':') {
             object_free(m);
             object_free(key.obj);
@@ -659,7 +646,7 @@ static parse_result parse_map(uint32_t i, uint32_t sz, UChar *str) {
             parse_result res = {NULL, i};
             return res;
         }
-        c = get_after_ws(str, &i, &sz);
+        c = get_after_ws(str, &i, sz);
         if (c == '}') {
             break;
         }
@@ -668,13 +655,13 @@ static parse_result parse_map(uint32_t i, uint32_t sz, UChar *str) {
             parse_result res = {NULL, i};
             return res;
         }
-        c = get_after_ws(str, &i, &sz);
+        c = get_after_ws(str, &i, sz);
     }
     parse_result res = {m, i};
     return res;
 }
 
-static parse_result parse_list(uint32_t i, uint32_t sz, UChar *str) {
+static parse_result parse_list(uint32_t i, uint32_t sz, char_t *str) {
     object *lst = object_list();
     uint32_t next = i;
     if (i >= sz) {
@@ -682,7 +669,7 @@ static parse_result parse_list(uint32_t i, uint32_t sz, UChar *str) {
         parse_result res = {NULL, i};
         return res;
     }
-    UChar32 c = get_after_ws(str, &next, &sz);
+    uint32_t c = get_after_ws(str, &next, sz);
     if (c == ']') {
         parse_result res = {lst, next};
         return res;
@@ -703,7 +690,7 @@ static parse_result parse_list(uint32_t i, uint32_t sz, UChar *str) {
             parse_result res = {NULL, i};
             return res;
         }
-        c = get_after_ws(str, &i, &sz);
+        c = get_after_ws(str, &i, sz);
         
         if (c == ']') {
             break;
@@ -718,7 +705,7 @@ static parse_result parse_list(uint32_t i, uint32_t sz, UChar *str) {
     return res;
 }
 
-static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
+static parse_result parse_num(uint32_t c, uint32_t i, uint32_t sz, char_t *str) {
     int64_t out = 0;
     bool negative = false;
     if (c == '-') {
@@ -727,7 +714,7 @@ static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
             parse_result res = {NULL, i};
             return res;
         }
-        c = get_next(str, &i, &sz);
+        c = str_next(str, &i, sz);
     }
     if (c != '0') {
         while (1) {
@@ -740,7 +727,7 @@ static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
             if (i >= sz) {
                 break;
             }
-            c = get_next(str, &i, &sz);
+            c = str_next(str, &i, sz);
         }
     }
     if (c != '.' && c != 'e' && c != 'E') {
@@ -758,7 +745,7 @@ static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
         }
         double mul = 0.1;
         while (1) {
-            c = get_next(str, &i, &sz);
+            c = str_next(str, &i, sz);
             if (c >= '0' && c <= '9') {
                 d += ((double)(c - '0'))*mul;
                 mul *= 0.1;
@@ -780,7 +767,7 @@ static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
             parse_result res = {NULL, i};
             return res;
         }
-        c = get_next(str, &i, &sz);
+        c = str_next(str, &i, sz);
         bool e_negative = false;
         if (c == '-') {
             e_negative = true;
@@ -790,7 +777,7 @@ static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
                 parse_result res = {NULL, i};
                 return res;
             }
-            c = get_next(str, &i, &sz);
+            c = str_next(str, &i, sz);
         }
         bool e_num = false;
         while (1) {
@@ -804,7 +791,7 @@ static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
             if (i >= sz) {
                 break;
             }
-            c = get_next(str, &i, &sz);
+            c = str_next(str, &i, sz);
         }
         if (!e_num) {
             parse_result res = {NULL, i};
@@ -822,36 +809,36 @@ static parse_result parse_num(UChar32 c, uint32_t i, uint32_t sz, UChar *str) {
     return res;
 }
 
-parse_result object_from_json_int(UChar *str, uint32_t sz) {
+parse_result object_from_json_int(char_t *str, uint32_t sz) {
     uint32_t i=0;
     if (i >= sz) {
         parse_result res = {NULL, i};
         return res;
     }
-    UChar32 c = get_after_ws(str, &i, &sz);
+    uint32_t c = get_after_ws(str, &i, sz);
     if (c == '{') {
         return parse_map(i, sz, str);
     } else if (c == '[') {
         return parse_list(i, sz, str);
     } else if (c == 'n') {
-        U_STRING(null, "ull", 3);
-        if (u_memcmp(str + i, null, 3) == 0) {
+        STR_INIT(null, "ull", 3);
+        if (str_memcmp(str + i, null, 3) == 0) {
             parse_result res = {object_none(), i + 3};
             return res;
         }
         parse_result res = {NULL, i};
         return res;
     } else if (c == 't') {
-        U_STRING(true_string, "rue", 3);
-        if (u_memcmp(str + i, true_string, 3) == 0) {
+        STR_INIT(true_string, "rue", 3);
+        if (str_memcmp(str + i, true_string, 3) == 0) {
             parse_result res = {object_bool(true), i + 3};
             return res;
         }
         parse_result res = {NULL, i};
         return res;
     } else if (c == 'f') {
-        U_STRING(false_string, "alse", 4);
-        if (u_memcmp(str + i, false_string, 4) == 0) {
+        STR_INIT(false_string, "alse", 4);
+        if (str_memcmp(str + i, false_string, 4) == 0) {
             parse_result res = {object_bool(false), i + 4};
             return res;
         }
@@ -867,7 +854,7 @@ parse_result object_from_json_int(UChar *str, uint32_t sz) {
     }
 }
 
-object *object_from_json(UChar *str) {
-    parse_result res = object_from_json_int(str, u_strlen(str));
+object *object_from_json(char_t *str) {
+    parse_result res = object_from_json_int(str, str_strlen(str));
     return res.obj;
 }

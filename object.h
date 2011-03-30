@@ -22,12 +22,7 @@
 
 #include "stdint.h"
 #include "stdbool.h"
-
-#include "ustring.h"
-
-#define U_STRING(name, str, len) \
-    U_STRING_DECL(name, str, len); \
-    U_STRING_INIT(name, str, len)
+#include "string_type.h"
 
 struct object;
 typedef struct object object;
@@ -42,7 +37,7 @@ typedef struct object object;
 
 object *object_map();
 object *object_list();
-object *object_str(UChar *);
+object *object_str(char_t *);
 object *object_int(int64_t);
 object *object_float(double);
 object *object_none();
@@ -66,14 +61,14 @@ void object_list_remove(object *, int32_t);
 object *object_list_get(object *, int32_t);
 int32_t object_list_length(object *);
 
-UChar *object_str_get(object *);
+char_t *object_str_get(object *);
 int64_t object_int_get(object *);
 double object_float_get(object *);
 bool object_bool_get(object *);
 
-UChar *object_join(object *);
+char_t *object_join(object *);
 
-UChar *object_to_json(object *, bool);
-object *object_from_json(UChar *);
+char_t *object_to_json(object *, bool);
+object *object_from_json(char_t *);
 
 #endif

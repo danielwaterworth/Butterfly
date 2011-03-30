@@ -24,7 +24,7 @@
 #include "object.h"
 
 START_TEST (test_null) {
-    U_STRING(null_test, "null", 4);
+    STR_INIT(null_test, "null", 4);
     object *obj = object_from_json(null_test);
     fail_unless(obj != NULL, NULL);
     object *none = object_none();
@@ -34,7 +34,7 @@ START_TEST (test_null) {
 } END_TEST
 
 START_TEST (test_whitespace) {
-    U_STRING(null_test, "  \t\nnull\n", 9);
+    STR_INIT(null_test, "  \t\nnull\n", 9);
     object *obj = object_from_json(null_test);
     fail_unless(obj != NULL, NULL);
     object *none = object_none();
@@ -44,7 +44,7 @@ START_TEST (test_whitespace) {
 } END_TEST
 
 START_TEST (test_true) {
-    U_STRING(true_test, "true", 4);
+    STR_INIT(true_test, "true", 4);
     object *obj = object_from_json(true_test);
     fail_unless(obj != NULL, NULL);
     object *object_true = object_bool(true);
@@ -54,7 +54,7 @@ START_TEST (test_true) {
 } END_TEST
 
 START_TEST (test_false) {
-    U_STRING(false_test, "false", 5);
+    STR_INIT(false_test, "false", 5);
     object *obj = object_from_json(false_test);
     fail_unless(obj != NULL, NULL);
     object *object_false = object_bool(false);
@@ -64,7 +64,7 @@ START_TEST (test_false) {
 } END_TEST
 
 START_TEST (test_list_1) {
-    U_STRING(list_test, "[null, null, null]", 18);
+    STR_INIT(list_test, "[null, null, null]", 18);
     object *obj = object_from_json(list_test);
     fail_unless(obj != NULL, NULL);
     fail_unless(object_type(obj) == OBJECT_LIST, NULL);
@@ -88,7 +88,7 @@ START_TEST (test_list_1) {
 } END_TEST
 
 START_TEST (test_list_2) {
-    U_STRING(list_test, "[\"test\", null, null]", 20);
+    STR_INIT(list_test, "[\"test\", null, null]", 20);
     object *obj = object_from_json(list_test);
     fail_unless(obj != NULL, NULL);
     fail_unless(object_type(obj) == OBJECT_LIST, NULL);
@@ -96,7 +96,7 @@ START_TEST (test_list_2) {
     object *none = object_none();
     
     object *item = object_list_get(obj, 0);
-    U_STRING(val_str, "test", 4);
+    STR_INIT(val_str, "test", 4);
     object *val = object_str(val_str);
     fail_unless(object_eq(item, val), NULL);
     object_free(item);
@@ -114,31 +114,31 @@ START_TEST (test_list_2) {
 } END_TEST
 
 START_TEST (test_list_3) {
-    U_STRING(list_test, "[1]", 3);
+    STR_INIT(list_test, "[1]", 3);
     object *obj = object_from_json(list_test);
     fail_unless(obj != NULL, NULL);
 } END_TEST
 
 START_TEST (test_list_4) {
-    U_STRING(list_test, "[1.5]", 5);
+    STR_INIT(list_test, "[1.5]", 5);
     object *obj = object_from_json(list_test);
     fail_unless(obj != NULL, NULL);
 } END_TEST
 
 START_TEST (test_list_5) {
-    U_STRING(list_test, "[1e1]", 5);
+    STR_INIT(list_test, "[1e1]", 5);
     object *obj = object_from_json(list_test);
     fail_unless(obj != NULL, NULL);
 } END_TEST
 
 START_TEST (test_list_6) {
-    U_STRING(list_test, "[1.5e1]", 7);
+    STR_INIT(list_test, "[1.5e1]", 7);
     object *obj = object_from_json(list_test);
     fail_unless(obj != NULL, NULL);
 } END_TEST
 
 START_TEST (test_int) {
-    U_STRING(int_test, "105", 3);
+    STR_INIT(int_test, "105", 3);
     object *obj = object_from_json(int_test);
     fail_unless(obj != NULL, NULL);
     object *n = object_int(105);
@@ -148,7 +148,7 @@ START_TEST (test_int) {
 } END_TEST
 
 START_TEST (test_float_1) {
-    U_STRING(float_test, "1.75", 4);
+    STR_INIT(float_test, "1.75", 4);
     object *obj = object_from_json(float_test);
     fail_unless(obj != NULL, NULL);
     fail_unless(object_type(obj) == OBJECT_FLOAT, NULL);
@@ -158,19 +158,19 @@ START_TEST (test_float_1) {
 } END_TEST
 
 START_TEST (test_float_2) {
-    U_STRING(float_test, "1.", 2);
+    STR_INIT(float_test, "1.", 2);
     object *obj = object_from_json(float_test);
     fail_unless(obj == NULL, NULL);
 } END_TEST
 
 START_TEST (test_float_3) {
-    U_STRING(float_test, "1e", 2);
+    STR_INIT(float_test, "1e", 2);
     object *obj = object_from_json(float_test);
     fail_unless(obj == NULL, NULL);
 } END_TEST
 
 START_TEST (test_float_4) {
-    U_STRING(float_test, "1e5", 3);
+    STR_INIT(float_test, "1e5", 3);
     object *obj = object_from_json(float_test);
     fail_unless(obj != NULL, NULL);
     fail_unless(object_type(obj) == OBJECT_FLOAT, NULL);
@@ -180,7 +180,7 @@ START_TEST (test_float_4) {
 } END_TEST
 
 START_TEST (test_float_5) {
-    U_STRING(float_test, "1e-2", 3);
+    STR_INIT(float_test, "1e-2", 4);
     object *obj = object_from_json(float_test);
     fail_unless(obj != NULL, NULL);
     fail_unless(object_type(obj) == OBJECT_FLOAT, NULL);
@@ -190,31 +190,31 @@ START_TEST (test_float_5) {
 } END_TEST
 
 START_TEST (test_string_1) {
-    U_STRING(str_test, "\"test\"", 6);
+    STR_INIT(str_test, "\"test\"", 6);
     object *obj = object_from_json(str_test);
-    U_STRING(test, "test", 4);
-    UChar *res = object_str_get(obj);
-    fail_unless(u_strcmp(res, test) == 0, NULL);
+    STR_INIT(test, "test", 4);
+    char_t *res = object_str_get(obj);
+    fail_unless(str_strcmp(res, test) == 0, NULL);
     free(res);
     object_free(obj);
 } END_TEST
 
 START_TEST (test_string_2) {
-    U_STRING(str_test, " \"test1\" ", 7);
+    STR_INIT(str_test, " \"test1\" ", 9);
     object *obj = object_from_json(str_test);
-    U_STRING(test, "test1", 4);
-    UChar *res = object_str_get(obj);
-    fail_unless(u_strcmp(res, test) == 0, NULL);
+    STR_INIT(test, "test1", 5);
+    char_t *res = object_str_get(obj);
+    fail_unless(str_strcmp(res, test) == 0, NULL);
     free(res);
     object_free(obj);
 } END_TEST
 
 START_TEST (test_map_1) {
-    U_STRING(map_test, "{\"hello\":\"world\"}", 17);
+    STR_INIT(map_test, "{\"hello\":\"world\"}", 17);
     object *obj = object_from_json(map_test);
     object *m = object_map();
-    U_STRING(key_str, "hello", 5);
-    U_STRING(val_str, "world", 5);
+    STR_INIT(key_str, "hello", 5);
+    STR_INIT(val_str, "world", 5);
     object *key = object_str(key_str);
     object *val = object_str(val_str);
     fail_unless(obj != NULL, NULL);
@@ -223,11 +223,11 @@ START_TEST (test_map_1) {
 } END_TEST
 
 START_TEST (test_map_2) {
-    U_STRING(map_test, "{\"hello\":\"world\", \"something\":null}", 35);
+    STR_INIT(map_test, "{\"hello\":\"world\", \"something\":null}", 35);
     object *obj = object_from_json(map_test);
     object *m = object_map();
-    U_STRING(key_str, "hello", 5);
-    U_STRING(val_str, "world", 5);
+    STR_INIT(key_str, "hello", 5);
+    STR_INIT(val_str, "world", 5);
     object *key = object_str(key_str);
     object *val = object_str(val_str);
     fail_unless(obj != NULL, NULL);
@@ -236,7 +236,7 @@ START_TEST (test_map_2) {
 } END_TEST
 
 START_TEST (test_map_3) {
-    U_STRING(big_str, "{\"hello\":{\"something\":\"yeah\"}, \"num\":1.1}", 41);
+    STR_INIT(big_str, "{\"hello\":{\"something\":\"yeah\"}, \"num\":1.1}", 41);
     object *obj = object_from_json(big_str);
     fail_unless(obj != NULL, NULL);
 } END_TEST

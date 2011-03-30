@@ -17,29 +17,21 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "check.h"
-
-#include "list_test.h"
-#include "map_test.h"
-#include "primitive_test.h"
-#include "json_deserialize_test.h"
-#include "json_serialize_test.h"
 #include "string_test.h"
+#include "string_type.h"
 
-int main() {
-    int number_failed;
-    Suite *s = suite_create("Main");
-    
-    suite_add_tcase(s, list_test_case());
-    suite_add_tcase(s, map_test_case());
-    suite_add_tcase(s, primitive_test_case());
-    suite_add_tcase(s, json_deserialize_test_case());
-    suite_add_tcase(s, json_serialize_test_case());
-    suite_add_tcase(s, string_test_case());
-    
-    SRunner *sr = srunner_create(s);
-    srunner_run_all(sr, CK_NORMAL);
-    number_failed = srunner_ntests_failed(sr);
-    srunner_free(sr);
-    return (number_failed == 0) ? 0 : 1;
+START_TEST (init_test) {
+    STR_INIT(str, "hello world", 11);
+} END_TEST
+
+START_TEST (convert_test) {
+    char_t str[12];
+    str_convert("hello world", str, 12);
+} END_TEST
+
+TCase *string_test_case() {
+    TCase *tc = tcase_create("string");
+    tcase_add_test(tc, init_test);
+    tcase_add_test(tc, convert_test);
+    return tc;
 }
