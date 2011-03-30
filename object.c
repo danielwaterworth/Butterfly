@@ -321,43 +321,184 @@ UChar *object_join(object *obj) {
     return res;
 }
 
-object *object_to_json_joinable(object *obj, bool pretty) {
+static UChar32 get_next(UChar *str, uint32_t *i, uint32_t *sz) {
+    UChar32 c;
+    U16_NEXT(str, *i, *sz, c);
+    return c;
+}
+
+static uint32_t int_to_json_len(int64_t i) {
+    if (i == 0) {
+        return 1;
+    }
+    int64_t n = i;
+    if (n < 0) {
+        n *= -1;
+    }
+    uint32_t len = ceil(log10(n));
+    if (i < 0) {
+        len += 1;
+    }
+    return len;
+}
+
+static uint32_t int_to_json_write(UChar *str, int64_t i) {
+    if (i == 0) {
+        *str = '0';
+        return 1;
+    }
+    int64_t j = i;
+    if (j < 0) {
+        j *= -1;
+    }
+    uint32_t len = ceil(log10(j));
+    uint32_t n = len;
+    if (i < 0) {
+        *str = '-';
+        str += 1;
+        len += 1;
+        i *= -1;
+    }
+    while (i) {
+        --n;
+        str[n] = (i%10) + '0';
+        i -= i%10;
+        i /= 10;
+    }
+    return len;
+}
+
+static uint32_t str_to_json_len(object *obj) {
+    UChar *str = object_str_get(obj);
+    uint32_t sz = u_strlen(str);
+    uint32_t len = 2;
+    uint32_t i = 0;
+    while (i < sz) {
+        UChar32 c = get_next(str, &i, &sz);
+        if (c == '\\' || c == '\n' || c == '"' || c == '\t') {
+            len += 2;
+        } else {
+            len += U16_LENGTH(c);
+        }
+    }
+    free(str);
+    return len;
+}
+
+static uint32_t str_to_json_write(UChar *str, object *obj) {
+    uint32_t i = 0;
+    uint32_t j = 0;
+    U16_APPEND_UNSAFE(str, j, '"');
+    UChar *val = object_str_get(obj);
+    uint32_t sz = u_strlen(val);
+    while (i < sz) {
+        UChar32 c = get_next(val, &i, &sz);
+        if (c == '\\' || c == '\n' || c == '"' || c == '\t') {
+            U16_APPEND_UNSAFE(str, j, '\\');
+            switch (c) {
+                case '\\':
+                    U16_APPEND_UNSAFE(str, j, '\\');
+                    break;
+                case '\n':
+                    U16_APPEND_UNSAFE(str, j, 'n');
+                    break;
+                case '"':
+                    U16_APPEND_UNSAFE(str, j, '"');
+                    break;
+                case '\t':
+                    U16_APPEND_UNSAFE(str, j, 't');
+                    break;
+            };
+        } else {
+            U16_APPEND_UNSAFE(str, j, c);
+        }
+    }
+    U16_APPEND_UNSAFE(str, j, '"');
+    free(val);
+    return j;
+}
+
+static uint32_t float_to_json_len(double val) {
+    
+}
+
+static uint32_t float_to_json_write(UChar *str, double val) {
+    
+}
+
+static uint32_t list_to_json_len(object *obj, bool pretty) {
+    
+}
+
+static uint32_t list_to_json_write(UChar *str, object *obj, bool pretty) {
+
+}
+
+static uint32_t map_to_json_len(object *obj, bool pretty) {
+    
+}
+
+static uint32_t map_to_json_write(UChar *str, object *obj, bool pretty) {
+    
+}
+
+static uint32_t object_to_json_len(object *obj, bool pretty) {
+    switch (obj->type) {
+        case OBJECT_NONE:
+            return 4;
+        case OBJECT_BOOL:
+            if (object_bool_get(obj)) {
+                return 4;
+            } else {
+                return 5;
+            }
+        case OBJECT_INT:
+            return int_to_json_len(object_int_get(obj));
+        case OBJECT_STR:
+            return str_to_json_len(obj);
+        case OBJECT_FLOAT:
+            return float_to_json_len(object_float_get(obj));
+        case OBJECT_LIST:
+            return list_to_json_len(obj, pretty);
+        case OBJECT_MAP:
+            return map_to_json_len(obj, pretty);
+    };
+}
+
+static uint32_t object_to_json_write(UChar *str, object *obj, bool pr) {
     U_STRING(none_string, "null", 4);
     U_STRING(true_string, "true", 4);
     U_STRING(false_string, "false", 5);
     switch (obj->type) {
         case OBJECT_NONE:
-            return object_str(none_string);
+            u_strcpy(str, none_string);
+            break;
         case OBJECT_BOOL:
-            if (obj->data.b) {
-                return object_str(true_string);
+            if (object_bool_get(obj) == true) {
+                u_strcpy(str, true_string);
             } else {
-                return object_str(false_string);
+                u_strcpy(str, false_string);
             }
+            break;
         case OBJECT_INT:
-            break;
-        case OBJECT_STR:
-            break;
+            return int_to_json_write(str, object_int_get(obj));
         case OBJECT_FLOAT:
-            break;
+            return float_to_json_write(str, object_float_get(obj));
+        case OBJECT_STR:
+            return str_to_json_write(str, obj);
         case OBJECT_LIST:
-            break;
+            return list_to_json_write(str, obj, pr);
         case OBJECT_MAP:
-            break;
+            return map_to_json_write(str, obj, pr);
     };
 }
 
 UChar *object_to_json(object *obj, bool pretty) {
-    object *joinable = object_to_json_joinable(obj, pretty);
-    UChar *out = object_join(joinable);
-    object_free(joinable);
-    return out;
-}
-
-static UChar32 get_next(UChar *str, uint32_t *i, uint32_t *sz) {
-    UChar32 c;
-    U16_NEXT(str, *i, *sz, c);
-    return c;
+    uint32_t n = object_to_json_len(obj, pretty);
+    UChar *res = malloc(sizeof(UChar) * (n + 1));
+    object_to_json_write(res, obj, pretty);
+    res[n] = '\0';
+    return res;
 }
 
 static UChar32 get_after_ws(UChar *str, uint32_t *i, uint32_t *sz) {
