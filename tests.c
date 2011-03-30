@@ -25,6 +25,7 @@
 #include "json_deserialize_test.h"
 #include "json_serialize_test.h"
 #include "string_test.h"
+#include "iterator_test.h"
 
 int main() {
     int number_failed;
@@ -36,6 +37,7 @@ int main() {
     suite_add_tcase(s, json_deserialize_test_case());
     suite_add_tcase(s, json_serialize_test_case());
     suite_add_tcase(s, string_test_case());
+    suite_add_tcase(s, iterator_test_case());
     
     SRunner *sr = srunner_create(s);
     srunner_run_all(sr, CK_NORMAL);

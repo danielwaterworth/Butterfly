@@ -27,6 +27,9 @@
 struct object;
 typedef struct object object;
 
+struct object_iterator;
+typedef struct object_iterator object_iterator;
+
 #define OBJECT_MAP 1
 #define OBJECT_LIST 2
 #define OBJECT_STR 3
@@ -47,6 +50,7 @@ int object_type(object *);
 object *object_copy(object *);
 void object_free(object *);
 bool object_hashable(object *);
+bool object_iterable(object *);
 uint32_t object_hash(object *);
 bool object_eq(object *, object *);
 
@@ -65,6 +69,11 @@ char_t *object_str_get(object *);
 int64_t object_int_get(object *);
 double object_float_get(object *);
 bool object_bool_get(object *);
+
+object_iterator *object_iterate(object *);
+bool object_iterator_hasnext(object_iterator *);
+object *object_iterator_getnext(object_iterator *);
+void object_iterator_free(object_iterator *);
 
 char_t *object_join(object *);
 

@@ -38,6 +38,11 @@ struct object {
     } data;
 };
 
+struct object_iterator {
+    object *dst;
+    uint32_t pos;
+};
+
 unsigned char none_type = OBJECT_NONE;
 
 #define none ((object *)&none_type)
@@ -120,12 +125,14 @@ int object_type(object *obj) {
 }
 
 bool object_hashable(object *obj) {
-    if (obj->type == OBJECT_LIST ||
-        obj->type == OBJECT_MAP ||
-        obj->type == OBJECT_FLOAT) {
-            return false;
-    }
-    return true;
+    return !(obj->type == OBJECT_LIST ||
+             obj->type == OBJECT_MAP ||
+             obj->type == OBJECT_FLOAT);
+}
+
+bool object_iterable(object *obj) {
+    return (obj->type == OBJECT_LIST ||
+            obj->type == OBJECT_MAP);
 }
 
 static uint32_t object_str_hash(object *obj) {
@@ -273,6 +280,56 @@ object *object_map_get(object *obj, object *key) {
     assert(obj->type == OBJECT_MAP);
     assert(object_hashable(key));
     return map_get(&obj->data.m, key);
+}
+
+object_iterator *object_iterate(object *obj) {
+    assert(object_iterable(obj));
+    object_iterator *it = malloc(sizeof(object_iterator));
+    it->dst = obj;
+    it->pos = 0;
+    return it;
+}
+
+void object_iterator_free(object_iterator *it) {
+    free(it);
+}
+
+bool object_iterator_hasnext(object_iterator *it) {
+    if (it->dst->type == OBJECT_MAP) {
+        return it->pos < it->dst->data.m.sz;
+    } else if (it->dst->type == OBJECT_LIST) {
+        return it->pos < object_list_length(it->dst);
+    }
+}
+
+static object_iterator_map_jmpnext(object_iterator *it) {
+    ++it->pos;
+    while (it->pos < it->dst->data.m.sz) {
+        if (it->dst->data.m.data[it->pos].key != NULL) {
+            break;
+        }
+        ++it->pos;
+    }
+}
+
+object *object_iterator_getnext(object_iterator *it) {
+    assert(object_iterator_hasnext(it));
+    
+    if (it->dst->type == OBJECT_MAP) {
+        object *ret = object_list();
+        if (it->dst->data.m.data[it->pos].key == NULL) {
+            object_iterator_map_jmpnext(it);
+        }
+        record *rec = &it->dst->data.m.data[it->pos];
+        object_list_set(ret, 0, rec->key);
+        object_list_set(ret, 1, rec->val);
+        object_iterator_map_jmpnext(it);
+        return ret;
+    }
+    
+    if (it->dst->type == OBJECT_LIST) {
+        return object_list_get(it->dst, ++(it->pos));
+    }
 }
 
 static size_t object_join_sz(object *obj) {

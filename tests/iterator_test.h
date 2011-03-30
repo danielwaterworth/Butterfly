@@ -17,32 +17,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MAP_H
-#define MAP_H
+#include "check.h"
 
-#include "object.h"
-
-struct record {
-    object *key;
-    object *val;
-};
-typedef struct record record;
-
-struct map {
-    record *data;
-    /* the number of records in the allocation */
-    uint32_t sz;
-    /* the number of elements in the map */
-    uint32_t elems;
-};
-typedef struct map map;
-
-void map_init(map *, uint32_t);
-void map_set(map *, object *, object *);
-object *map_get(map *, object *);
-void map_rem(map *, object *);
-void map_clear(map *);
-void map_copy(map *, map *);
-uint32_t map_length(map *);
-
-#endif
+TCase *iterator_test_case();
