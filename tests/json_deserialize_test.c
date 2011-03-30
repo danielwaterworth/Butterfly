@@ -138,13 +138,7 @@ START_TEST (test_list_6) {
 } END_TEST
 
 START_TEST (test_list_7) {
-    STR_INIT(list_test, "[0]", 6);
-    object *obj = object_from_json(list_test);
-    fail_unless(obj != NULL, NULL);
-} END_TEST
-
-START_TEST (test_list_8) {
-    STR_INIT(list_test, "[1]", 6);
+    STR_INIT(list_test, "[0]", 3);
     object *obj = object_from_json(list_test);
     fail_unless(obj != NULL, NULL);
 } END_TEST
@@ -266,7 +260,6 @@ TCase *json_deserialize_test_case() {
     tcase_add_test(tc, test_list_5);
     tcase_add_test(tc, test_list_6);
     tcase_add_test(tc, test_list_7);
-    tcase_add_test(tc, test_list_8);
     tcase_add_test(tc, test_int);
     tcase_add_test(tc, test_float_1);
     tcase_add_test(tc, test_float_2);
