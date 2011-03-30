@@ -1,4 +1,4 @@
-#   Copyright (C) 2011 Daniel Waterworth
+#   Copyright (C) 2011 Butterfly authors,
 #   
 #   This file is part of Butterfly.
 #   
