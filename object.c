@@ -328,7 +328,7 @@ object *object_iterator_getnext(object_iterator *it) {
     }
     
     if (it->dst->type == OBJECT_LIST) {
-        return object_list_get(it->dst, ++(it->pos));
+        return object_list_get(it->dst, (it->pos)++);
     }
 }
 
@@ -791,7 +791,10 @@ static parse_result parse_num(uint32_t c, uint32_t i, uint32_t sz, char_t *str) 
         if (negative) {
             out *= -1;
         }
-        parse_result res = {object_int(out), i - 1};
+        parse_result res = {object_int(out), i};
+        if (c != '0') {
+            --res.i;
+        }
         return res;
     }
     double d = out;
