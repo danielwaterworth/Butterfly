@@ -366,10 +366,13 @@ static void object_join_write(object *obj, char_t *str) {
 char_t *object_join(object *obj) {
     assert(obj->type == OBJECT_LIST || obj->type == OBJECT_STR);
     size_t len = object_join_sz(obj);
-    char_t *res = malloc(sizeof(char_t) * len + 1);
+    char_t *res = malloc(sizeof(char_t) * (len + 1));
     object_join_write(obj, res);
     return res;
 }
+
+static uint32_t object_to_json_len(object *, bool);
+static uint32_t object_to_json_write(char_t *, object *, bool);
 
 static uint32_t int_to_json_len(int64_t i) {
     if (i == 0) {
@@ -379,7 +382,7 @@ static uint32_t int_to_json_len(int64_t i) {
     if (n < 0) {
         n *= -1;
     }
-    uint32_t len = ceil(log10(n));
+    uint32_t len = ceil(log10(n + 1));
     if (i < 0) {
         len += 1;
     }
@@ -395,7 +398,7 @@ static uint32_t int_to_json_write(char_t *str, int64_t i) {
     if (j < 0) {
         j *= -1;
     }
-    uint32_t len = ceil(log10(j));
+    uint32_t len = ceil(log10(j + 1));
     uint32_t n = len;
     if (i < 0) {
         *str = '-';
@@ -471,11 +474,48 @@ static uint32_t float_to_json_write(char_t *str, double val) {
 }
 
 static uint32_t list_to_json_len(object *obj, bool pretty) {
+    // only works for pretty == false
+    uint32_t len = 2;
+    object_iterator *it = object_iterate(obj);
+    object *item;
     
+    while (object_iterator_hasnext(it)) {
+        item = object_iterator_getnext(it);
+        
+        len += object_to_json_len(item, pretty);
+        
+        if (object_iterator_hasnext(it)) {
+            len += 1;
+        }
+        
+        object_free(item);
+    }
+    
+    object_iterator_free(it);
+    return len;
 }
 
 static uint32_t list_to_json_write(char_t *str, object *obj, bool pretty) {
-
+    uint32_t i = 0;
+    str_append(str, &i, '[');
+    object_iterator *it = object_iterate(obj);
+    object *item;
+    
+    while (object_iterator_hasnext(it)) {
+        item = object_iterator_getnext(it);
+        
+        i += object_to_json_write(str + i, item, pretty);
+        
+        if (object_iterator_hasnext(it)) {
+            str_append(str, &i, ',');
+        }
+        
+        object_free(item);
+    }
+    
+    object_iterator_free(it);
+    str_append(str, &i, ']');
+    return i;
 }
 
 static uint32_t map_to_json_len(object *obj, bool pretty) {
@@ -516,14 +556,15 @@ static uint32_t object_to_json_write(char_t *str, object *obj, bool pr) {
     switch (obj->type) {
         case OBJECT_NONE:
             str_strcpy(str, none_string);
-            break;
+            return 4;
         case OBJECT_BOOL:
-            if (object_bool_get(obj) == true) {
+            if (object_bool_get(obj)) {
                 str_strcpy(str, true_string);
+                return 4;
             } else {
                 str_strcpy(str, false_string);
+                return 5;
             }
-            break;
         case OBJECT_INT:
             return int_to_json_write(str, object_int_get(obj));
         case OBJECT_FLOAT:
@@ -545,7 +586,7 @@ char_t *object_to_json(object *obj, bool pretty) {
     return res;
 }
 
-static uint32_t get_after_ws(char_t *str, uint32_t *i, uint32_t sz) {
+static uint32_t get_after_ws(const char_t *str, uint32_t *i, uint32_t sz) {
     uint32_t c = ' ';
     while ((c == ' ' || c == '\t' || c == '\r' || c == '\n') && (*i < sz)) {
         c = str_next(str, i, sz);
@@ -558,9 +599,9 @@ typedef struct {
     uint32_t i;
 } parse_result;
 
-parse_result object_from_json_int(char_t *str, uint32_t);
+parse_result object_from_json_int(const char_t *str, uint32_t);
 
-static parse_result parse_string(uint32_t i, uint32_t sz, char_t *str) {
+static parse_result parse_string(uint32_t i, uint32_t sz, const char_t *str) {
     uint32_t n = 0, m = 0;
     uint32_t start = i;
     uint32_t c;
@@ -659,7 +700,7 @@ static parse_result parse_string(uint32_t i, uint32_t sz, char_t *str) {
     return res;
 }
 
-static parse_result parse_map(uint32_t i, uint32_t sz, char_t *str) {
+static parse_result parse_map(uint32_t i, uint32_t sz, const char_t *str) {
     object *m = object_map();
     if (i >= sz) {
         object_free(m);
@@ -722,7 +763,7 @@ static parse_result parse_map(uint32_t i, uint32_t sz, char_t *str) {
     return res;
 }
 
-static parse_result parse_list(uint32_t i, uint32_t sz, char_t *str) {
+static parse_result parse_list(uint32_t i, uint32_t sz, const char_t *str) {
     object *lst = object_list();
     uint32_t next = i;
     if (i >= sz) {
@@ -766,7 +807,8 @@ static parse_result parse_list(uint32_t i, uint32_t sz, char_t *str) {
     return res;
 }
 
-static parse_result parse_num(uint32_t c, uint32_t i, uint32_t sz, char_t *str) {
+static parse_result parse_num
+        (uint32_t c, uint32_t i, uint32_t sz, const char_t *str) {
     int64_t out = 0;
     bool negative = false;
     if (c == '-') {
@@ -876,7 +918,7 @@ static parse_result parse_num(uint32_t c, uint32_t i, uint32_t sz, char_t *str) 
     return res;
 }
 
-parse_result object_from_json_int(char_t *str, uint32_t sz) {
+parse_result object_from_json_int(const char_t *str, uint32_t sz) {
     uint32_t i=0;
     if (i >= sz) {
         parse_result res = {NULL, i};
@@ -921,7 +963,7 @@ parse_result object_from_json_int(char_t *str, uint32_t sz) {
     }
 }
 
-object *object_from_json(char_t *str) {
+object *object_from_json(const char_t *str) {
     parse_result res = object_from_json_int(str, str_strlen(str));
     return res.obj;
 }

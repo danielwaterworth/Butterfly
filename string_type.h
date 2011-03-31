@@ -47,7 +47,7 @@ str_convert(STR, VAR, SZ + 1)
 void str_convert(const char *, char_t *, uint32_t);
 char_t *str_strdup(const char_t *);
 int str_strcmp(const char_t *, const char_t *);
-int str_memcmp(char_t *, const char_t *, uint32_t);
+int str_memcmp(const char_t *, const char_t *, uint32_t);
 uint32_t str_next(const char_t *, uint32_t *, uint32_t);
 void str_append(char_t *, uint32_t *, uint32_t);
 short str_encoding_length(uint32_t);

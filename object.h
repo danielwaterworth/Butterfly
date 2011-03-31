@@ -78,6 +78,6 @@ void object_iterator_free(object_iterator *);
 char_t *object_join(object *);
 
 char_t *object_to_json(object *, bool);
-object *object_from_json(char_t *);
+object *object_from_json(const char_t *);
 
 #endif

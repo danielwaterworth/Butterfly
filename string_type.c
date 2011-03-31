@@ -69,7 +69,7 @@ char_t *str_strcpy(char_t *dst, const char_t *src) {
     return u_strcpy(dst, src);
 }
 
-int str_memcmp(char_t *dst, const char_t *src, uint32_t sz) {
+int str_memcmp(const char_t *dst, const char_t *src, uint32_t sz) {
     return u_memcmp(dst, src, sz);
 }
 #endif
@@ -104,7 +104,7 @@ char_t *str_strcpy(char_t *dst, const char_t *src) {
     return strcpy(dst, src);
 }
 
-int str_memcmp(char_t *dst, const char_t *src, uint32_t sz) {
+int str_memcmp(const char_t *dst, const char_t *src, uint32_t sz) {
     return memcmp(dst, src, sz);
 }
 #endif

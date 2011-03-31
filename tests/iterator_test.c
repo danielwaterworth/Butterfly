@@ -81,7 +81,7 @@ START_TEST (iterate_map) {
     object_free(map);
 } END_TEST
 
-START_TEST (iterate_list) {
+START_TEST (iterate_list_1) {
     STR_INIT(list_string, "[0, 1]", 6);
     object *lst = object_from_json(list_string);
     
@@ -111,9 +111,40 @@ START_TEST (iterate_list) {
     object_free(lst);
 } END_TEST
 
+START_TEST (iterate_list_2) {
+    STR_INIT(lst_str, "[0,1,2]", 8);
+    object *obj = object_from_json(lst_str);
+    object_iterator *it = object_iterate(obj);
+    
+    while (object_iterator_hasnext(it)) {
+        object *item = object_iterator_getnext(it);
+        object_free(item);
+    }
+    
+    object_iterator_free(it);
+} END_TEST
+
+START_TEST (iterate_list_3) {
+    STR_INIT(lst_str, "[0,1,2]", 8);
+    object *obj = object_from_json(lst_str);
+    int i;
+    for (i = 0; i < 3; ++i) {
+        object_iterator *it = object_iterate(obj);
+        
+        while (object_iterator_hasnext(it)) {
+            object *item = object_iterator_getnext(it);
+            object_free(item);
+        }
+        
+        object_iterator_free(it);
+    }
+} END_TEST
+
 TCase *iterator_test_case() {
     TCase *tc = tcase_create("iteration");
     tcase_add_test(tc, iterate_map);
-    tcase_add_test(tc, iterate_list);
+    tcase_add_test(tc, iterate_list_1);
+    tcase_add_test(tc, iterate_list_2);
+    tcase_add_test(tc, iterate_list_3);
     return tc;
 }

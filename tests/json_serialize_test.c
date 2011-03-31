@@ -23,6 +23,22 @@
 #include "json_serialize_test.h"
 #include "object.h"
 
+#define TEST_FW_BW(name, str, sz) \
+START_TEST (name) { \
+    STR_INIT(test_str, str, sz); \
+    test_forward_backward(test_str); \
+} END_TEST
+
+static void test_forward_backward(const char_t *str) {
+    object *obj = object_from_json(str);
+    fail_unless(obj != NULL, NULL);
+    char_t *out = object_to_json(obj, false);
+    fail_unless(out != NULL, NULL);
+    fail_unless(str_strcmp(out, str) == 0, NULL);
+    free(out);
+    object_free(obj);
+}
+
 START_TEST (test_null) {
     object *obj = object_none();
     STR_INIT(none_str, "null", 4);
@@ -69,6 +85,12 @@ START_TEST (test_str_1) {
     fail_unless(str_strcmp(json_str, json_actual) == 0, NULL);
 } END_TEST
 
+TEST_FW_BW(test_list_1, "[]", 2);
+TEST_FW_BW(test_list_2, "[0]", 3);
+TEST_FW_BW(test_list_3, "[1]", 5);
+TEST_FW_BW(test_list_4, "[10]", 6);
+TEST_FW_BW(test_list_5, "[null,true,false]", 17);
+
 TCase *json_serialize_test_case() {
     TCase *tc = tcase_create("json_serialization");
     tcase_add_test(tc, test_null);
@@ -78,5 +100,10 @@ TCase *json_serialize_test_case() {
     tcase_add_test(tc, test_int_2);
     tcase_add_test(tc, test_int_3);
     tcase_add_test(tc, test_str_1);
+    tcase_add_test(tc, test_list_1);
+    tcase_add_test(tc, test_list_2);
+    tcase_add_test(tc, test_list_3);
+    tcase_add_test(tc, test_list_4);
+    tcase_add_test(tc, test_list_5);
     return tc;
 }
