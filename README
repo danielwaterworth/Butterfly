@@ -4,3 +4,13 @@ About
 Butterfly is a C library that implements a very simple 'dynamic' data-type. It 
 could be used, for example, to manipulate JSON data from C. It is distributed 
 under LGPL.
+
+Build Instructions
+==================
+
+In the main project directory:
+
+$ mkdir build
+$ cd build
+$ cmake ../
+$ make
