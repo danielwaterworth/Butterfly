@@ -786,15 +786,18 @@ static parse_result parse_num(uint32_t c, uint32_t i, uint32_t sz, char_t *str) 
             }
             c = str_next(str, &i, sz);
         }
+    } else {
+        if (i >= sz) {
+            parse_result res = {object_int(out), i};
+            return res;
+        }
+        c = str_next(str, &i, sz);
     }
     if (c != '.' && c != 'e' && c != 'E') {
         if (negative) {
             out *= -1;
         }
-        parse_result res = {object_int(out), i};
-        if (c != '0') {
-            --res.i;
-        }
+        parse_result res = {object_int(out), i - 1};
         return res;
     }
     double d = out;
