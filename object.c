@@ -618,6 +618,10 @@ static parse_result parse_string(uint32_t i, uint32_t sz, char_t *str) {
                         }
                     }
                     c = construct;
+                    if (c == '\0') {
+                        parse_result res = {NULL, i};
+                        return res;
+                    }
                 } else if (c == '"') {
                     c = '"';
                 } else if (c == '\\') {
