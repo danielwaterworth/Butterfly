@@ -282,27 +282,7 @@ object *object_map_get(object *obj, object *key) {
     return map_get(&obj->data.m, key);
 }
 
-object_iterator *object_iterate(object *obj) {
-    assert(object_iterable(obj));
-    object_iterator *it = malloc(sizeof(object_iterator));
-    it->dst = obj;
-    it->pos = 0;
-    return it;
-}
-
-void object_iterator_free(object_iterator *it) {
-    free(it);
-}
-
-bool object_iterator_hasnext(object_iterator *it) {
-    if (it->dst->type == OBJECT_MAP) {
-        return it->pos < it->dst->data.m.sz;
-    } else if (it->dst->type == OBJECT_LIST) {
-        return it->pos < object_list_length(it->dst);
-    }
-}
-
-static object_iterator_map_jmpnext(object_iterator *it) {
+static void object_iterator_map_jmpnext(object_iterator *it) {
     ++it->pos;
     while (it->pos < it->dst->data.m.sz) {
         if (it->dst->data.m.data[it->pos].key != NULL) {
@@ -312,14 +292,34 @@ static object_iterator_map_jmpnext(object_iterator *it) {
     }
 }
 
+object_iterator *object_iterate(object *obj) {
+    assert(object_iterable(obj));
+    object_iterator *it = malloc(sizeof(object_iterator));
+    it->dst = obj;
+    it->pos = 0;
+    if (obj->type == OBJECT_MAP) {
+        object_iterator_map_jmpnext(it);
+    }
+    return it;
+}
+
+void object_iterator_free(object_iterator *it) {
+    free(it);
+}
+
+bool object_iterator_hasnext(object_iterator *it) {
+    if (it->dst->type == OBJECT_MAP) {
+        return it->pos < it->dst->data.m.sz - 1;
+    } else if (it->dst->type == OBJECT_LIST) {
+        return it->pos < object_list_length(it->dst);
+    }
+}
+
 object *object_iterator_getnext(object_iterator *it) {
     assert(object_iterator_hasnext(it));
     
     if (it->dst->type == OBJECT_MAP) {
         object *ret = object_list();
-        if (it->dst->data.m.data[it->pos].key == NULL) {
-            object_iterator_map_jmpnext(it);
-        }
         record *rec = &it->dst->data.m.data[it->pos];
         object_list_set(ret, 0, rec->key);
         object_list_set(ret, 1, rec->val);
@@ -474,8 +474,8 @@ static uint32_t float_to_json_write(char_t *str, double val) {
 }
 
 static uint32_t list_to_json_len(object *obj, bool pretty) {
-    // only works for pretty == false
-    uint32_t len = 2;
+    assert(pretty == false && "pretty printing hasn't been written");
+    uint32_t len = 2; /* opening and closing brackets */
     object_iterator *it = object_iterate(obj);
     object *item;
     
@@ -485,7 +485,7 @@ static uint32_t list_to_json_len(object *obj, bool pretty) {
         len += object_to_json_len(item, pretty);
         
         if (object_iterator_hasnext(it)) {
-            len += 1;
+            len += 1; /* comma */
         }
         
         object_free(item);
@@ -496,6 +496,7 @@ static uint32_t list_to_json_len(object *obj, bool pretty) {
 }
 
 static uint32_t list_to_json_write(char_t *str, object *obj, bool pretty) {
+    assert(pretty == false && "pretty printing hasn't been written");
     uint32_t i = 0;
     str_append(str, &i, '[');
     object_iterator *it = object_iterate(obj);
@@ -519,11 +520,66 @@ static uint32_t list_to_json_write(char_t *str, object *obj, bool pretty) {
 }
 
 static uint32_t map_to_json_len(object *obj, bool pretty) {
+    assert(pretty == false && "pretty printing hasn't been written");
+    uint32_t len = 2;
     
+    object_iterator *it = object_iterate(obj);
+    object *item;
+    
+    while (object_iterator_hasnext(it)) {
+        item = object_iterator_getnext(it);
+        
+        object *key = object_list_get(item, 0);
+        object *val = object_list_get(item, 1);
+        
+        len += object_to_json_len(key, pretty);
+        len += 1;
+        len += object_to_json_len(val, pretty);
+        
+        if (object_iterator_hasnext(it)) {
+            len += 1;
+        }
+        
+        object_free(key);
+        object_free(val);
+        object_free(item);
+    }
+    
+    object_iterator_free(it);
+    return len;
 }
 
 static uint32_t map_to_json_write(char_t *str, object *obj, bool pretty) {
+    assert(pretty == false && "pretty printing hasn't been written");
+    uint32_t i = 0;
     
+    str_append(str, &i, '{');
+    
+    object_iterator *it = object_iterate(obj);
+    object *item;
+    
+    while (object_iterator_hasnext(it)) {
+        item = object_iterator_getnext(it);
+        
+        object *key = object_list_get(item, 0);
+        object *val = object_list_get(item, 1);
+        
+        i += object_to_json_write(str + i, key, pretty);
+        str_append(str, &i, ':');
+        i += object_to_json_write(str + i, val, pretty);
+        
+        if (object_iterator_hasnext(it)) {
+            str_append(str, &i, ',');
+        }
+        
+        object_free(key);
+        object_free(val);
+        object_free(item);
+    }
+    
+    object_iterator_free(it);
+    str_append(str, &i, '}');
+    return i;
 }
 
 static uint32_t object_to_json_len(object *obj, bool pretty) {

@@ -91,6 +91,10 @@ TEST_FW_BW(test_list_3, "[1]", 5);
 TEST_FW_BW(test_list_4, "[10]", 6);
 TEST_FW_BW(test_list_5, "[null,true,false]", 17);
 
+TEST_FW_BW(test_map_1, "{}", 2);
+TEST_FW_BW(test_map_2, "{\"hello\":\"world\"}", 17);
+TEST_FW_BW(test_map_3, "{\"0\":0,\"1\":1}", 13);
+
 TCase *json_serialize_test_case() {
     TCase *tc = tcase_create("json_serialization");
     tcase_add_test(tc, test_null);
@@ -105,5 +109,8 @@ TCase *json_serialize_test_case() {
     tcase_add_test(tc, test_list_3);
     tcase_add_test(tc, test_list_4);
     tcase_add_test(tc, test_list_5);
+    tcase_add_test(tc, test_map_1);
+    tcase_add_test(tc, test_map_2);
+    tcase_add_test(tc, test_map_3);
     return tc;
 }

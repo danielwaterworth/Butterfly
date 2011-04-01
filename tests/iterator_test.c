@@ -20,7 +20,7 @@
 #include "iterator_test.h"
 #include "object.h"
 
-START_TEST (iterate_map) {
+START_TEST (iterate_map_1) {
     STR_INIT(map_string, "{\"0\": \"first\", \"1\": \"second\"}", 29);
     
     STR_INIT(fk_str, "0", 1);
@@ -79,6 +79,13 @@ START_TEST (iterate_map) {
     
     object_iterator_free(it);
     object_free(map);
+} END_TEST
+
+START_TEST (iterate_map_2) {
+    STR_INIT(map_string, "{}", 2);
+    object *m = object_from_json(map_string);
+    object_iterator *it = object_iterate(m);
+    fail_unless(!object_iterator_hasnext(it), NULL);
 } END_TEST
 
 START_TEST (iterate_list_1) {
@@ -140,11 +147,20 @@ START_TEST (iterate_list_3) {
     }
 } END_TEST
 
+START_TEST (iterate_list_4) {
+    STR_INIT(lst_string, "[]", 2);
+    object *lst = object_from_json(lst_string);
+    object_iterator *it = object_iterate(lst);
+    fail_unless(!object_iterator_hasnext(it), NULL);
+} END_TEST
+
 TCase *iterator_test_case() {
     TCase *tc = tcase_create("iteration");
-    tcase_add_test(tc, iterate_map);
+    tcase_add_test(tc, iterate_map_1);
+    tcase_add_test(tc, iterate_map_2);
     tcase_add_test(tc, iterate_list_1);
     tcase_add_test(tc, iterate_list_2);
     tcase_add_test(tc, iterate_list_3);
+    tcase_add_test(tc, iterate_list_4);
     return tc;
 }
