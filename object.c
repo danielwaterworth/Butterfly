@@ -466,11 +466,19 @@ static uint32_t str_to_json_write(char_t *str, object *obj) {
 }
 
 static uint32_t float_to_json_len(double val) {
-    
+    assert(!isnan(val) && !isinf(val));
+    int sz = snprintf(NULL, 0, "%.17g", val);
+    assert(sz > 0);
+    return sz;
 }
 
 static uint32_t float_to_json_write(char_t *str, double val) {
-    
+    assert(!isnan(val) && !isinf(val));
+    char *out;
+    int sz = asprintf(&out, "%.17g", val);
+    str_convert(out, str, sz + 1);
+    free(out);
+    return sz;
 }
 
 static uint32_t list_to_json_len(object *obj, bool pretty) {
