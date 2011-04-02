@@ -28,6 +28,7 @@
 
 struct object {
     unsigned char type;
+    unsigned int ref;
     union {
         finger_branch l;
         map m;
@@ -47,22 +48,24 @@ unsigned char none_type = OBJECT_NONE;
 
 #define none ((object *)&none_type)
 
-object bool_true = {OBJECT_BOOL, { .b = true }};
-object bool_false = {OBJECT_BOOL, { .b = false }};
+object bool_true = {OBJECT_BOOL, 0, { .b = true }};
+object bool_false = {OBJECT_BOOL, 0, { .b = false }};
 
 #define object_true (&bool_true)
 #define object_false (&bool_false)
 
 object *object_map() {
-    object *res = malloc(sizeof(object));
-    res->type = OBJECT_MAP;
-    map_init(&res->data.m, 16);
-    return res;
+    object *obj = malloc(sizeof(object));
+    obj->type = OBJECT_MAP;
+    obj->ref = 1;
+    map_init(&obj->data.m, 16);
+    return obj;
 }
 
 object *object_list() {
     object *obj = malloc(sizeof(object));
     obj->type = OBJECT_LIST;
+    obj->ref = 1;
     obj->data.l.left = NULL;
     obj->data.l.right = NULL;
     obj->data.l.nodes = 0;
@@ -72,6 +75,7 @@ object *object_list() {
 object *object_str(char_t *str) {
     object *obj = malloc(sizeof(object));
     obj->type = OBJECT_STR;
+    obj->ref = 1;
     obj->data.str = str_strdup(str);
     return obj;
 }
@@ -79,6 +83,7 @@ object *object_str(char_t *str) {
 object *object_int(int64_t n) {
     object *obj = malloc(sizeof(object));
     obj->type = OBJECT_INT;
+    obj->ref = 1;
     obj->data.n = n;
     return obj;
 }
@@ -86,6 +91,7 @@ object *object_int(int64_t n) {
 object *object_float(double f) {
     object *obj = malloc(sizeof(object));
     obj->type = OBJECT_FLOAT;
+    obj->ref = 1;
     obj->data.f = f;
     return obj;
 }
@@ -105,6 +111,7 @@ object *object_bool(bool b) {
 static object *object_list_copy(object *obj) {
     object *res = malloc(sizeof(object));
     res->type = OBJECT_LIST;
+    res->ref = 1;
     res->data.l.right = list_copy(obj->data.l.right);
     res->data.l.left = list_copy(obj->data.l.left);
     res->data.l.nodes = obj->data.l.nodes;
@@ -114,6 +121,7 @@ static object *object_list_copy(object *obj) {
 static object *object_map_copy(object *obj) {
     object *res = malloc(sizeof(object));
     res->type = OBJECT_MAP;
+    obj->ref = 1;
     
     map_copy(&obj->data.m, &res->data.m);
     
@@ -181,6 +189,10 @@ bool object_eq(object *a, object *b) {
     };
 }
 
+static bool dec_ref(object *obj) {
+    return --obj->ref == 0;
+}
+
 void object_free(object *obj) {
     switch (obj->type) {
         case OBJECT_NONE:
@@ -188,22 +200,30 @@ void object_free(object *obj) {
             return;
         case OBJECT_INT:
         case OBJECT_FLOAT:
-            free(obj);
+            if (dec_ref(obj)) {
+                free(obj);
+            }
             return;
         case OBJECT_STR:
-            free(obj->data.str);
-            free(obj);
+            if (dec_ref(obj)) {
+                free(obj->data.str);
+                free(obj);
+            }
             return;
         case OBJECT_LIST:
-            while (object_list_length(obj)) {
-                object_list_remove(obj, 0);
+            if (dec_ref(obj)) {
+                while (object_list_length(obj)) {
+                    object_list_remove(obj, 0);
+                }
+                free(obj);
             }
-            free(obj);
             return;
         case OBJECT_MAP:
-            map_clear(&obj->data.m);
-            free(obj->data.m.data);
-            free(obj);
+            if (dec_ref(obj)) {
+                map_clear(&obj->data.m);
+                free(obj->data.m.data);
+                free(obj);
+            }
             return;
     };
 }
@@ -214,11 +234,10 @@ object *object_copy(object *obj) {
         case OBJECT_NONE:
             return obj;
         case OBJECT_INT:
-            return object_int(obj->data.n);
         case OBJECT_FLOAT:
-            return object_float(obj->data.f);
         case OBJECT_STR:
-            return object_str(obj->data.str);
+            ++obj->ref;
+            return obj;
         case OBJECT_LIST:
             return object_list_copy(obj);
         case OBJECT_MAP:
