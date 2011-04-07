@@ -94,6 +94,7 @@ TEST_FW_BW(test_list_5, "[null,true,false]", 17);
 TEST_FW_BW(test_map_1, "{}", 2);
 TEST_FW_BW(test_map_2, "{\"hello\":\"world\"}", 17);
 TEST_FW_BW(test_map_3, "{\"0\":0,\"1\":1}", 13);
+TEST_FW_BW(test_map_4, "{\"error\":{\"code\":\"-32601\"},\"id\":2,\"jsonrpc\":\"2.0\"}", 50);
 
 TEST_FW_BW(test_float_1, "0.5", 3);
 
@@ -114,6 +115,7 @@ TCase *json_serialize_test_case() {
     tcase_add_test(tc, test_map_1);
     tcase_add_test(tc, test_map_2);
     tcase_add_test(tc, test_map_3);
+    tcase_add_test(tc, test_map_4);
     tcase_add_test(tc, test_float_1);
     return tc;
 }
