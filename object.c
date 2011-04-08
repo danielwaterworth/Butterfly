@@ -121,7 +121,7 @@ static object *object_list_copy(object *obj) {
 static object *object_map_copy(object *obj) {
     object *res = malloc(sizeof(object));
     res->type = OBJECT_MAP;
-    obj->ref = 1;
+    res->ref = 1;
     
     map_copy(&obj->data.m, &res->data.m);
     
