@@ -188,6 +188,9 @@ void list_remove(finger_branch *branch, int32_t i) {
 }
 
 list *list_copy(list *l) {
+    if (l == NULL) {
+        return NULL;
+    }
     list *res = malloc(sizeof(list));
     res->type = l->type;
     if (l->type == LEAF) {
