@@ -92,15 +92,15 @@ TEST_FW_BW(test_list_2, "[0]", 3);
 TEST_FW_BW(test_list_3, "[1]", 5);
 TEST_FW_BW(test_list_4, "[10]", 6);
 TEST_FW_BW(test_list_5, "[null,true,false]", 17);
-TEST_FW_BW(test_list_6, "[{\"code\":0}]", 12);
-TEST_FW_BW(test_list_7, "[[]]", 4);
-TEST_FW_BW(test_list_8, "[{}]", 4);
-TEST_FW_BW(test_list_9, "[\"\"]", 4);
-TEST_FW_BW(test_list_10, "[\"tests\"]", 9);
+TEST_FW_BW(test_list_6, "[[]]", 4);
+TEST_FW_BW(test_list_7, "[{}]", 4);
+TEST_FW_BW(test_list_8, "[\"\"]", 4);
+TEST_FW_BW(test_list_9, "[\"tests\"]", 9);
 
 TEST_FW_BW(test_map_1, "{}", 2);
 TEST_FW_BW(test_map_2, "{\"hello\":\"world\"}", 17);
 TEST_FW_BW(test_map_3, "{\"0\":0,\"1\":1}", 13);
+TEST_FW_BW(test_map_4, "{\"code\":0}", 12);
 
 TEST_FW_BW(test_float_1, "0.5", 3);
 
@@ -123,10 +123,10 @@ TCase *json_serialize_test_case() {
     tcase_add_test(tc, test_list_7);
     tcase_add_test(tc, test_list_8);
     tcase_add_test(tc, test_list_9);
-    tcase_add_test(tc, test_list_10);
     tcase_add_test(tc, test_map_1);
     tcase_add_test(tc, test_map_2);
     tcase_add_test(tc, test_map_3);
+    tcase_add_test(tc, test_map_4);
     tcase_add_test(tc, test_float_1);
     return tc;
 }

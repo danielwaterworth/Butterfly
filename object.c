@@ -315,9 +315,11 @@ object_iterator *object_iterate(object *obj) {
     assert(object_iterable(obj));
     object_iterator *it = malloc(sizeof(object_iterator));
     it->dst = obj;
-    it->pos = 0;
     if (obj->type == OBJECT_MAP) {
+        it->pos = -1;
         object_iterator_map_jmpnext(it);
+    } else {
+        it->pos = 0;
     }
     return it;
 }
