@@ -35,12 +35,12 @@ ENDIF(USE_ICU)
 
 #the sources for the library
 SET(ButterflySources list map object string_type)
-INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}")
+INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(BUILD_UNITTESTS)
 	#the sources for the unittests
 	SET(UnittestSources tests/iterator_test tests/json_deserialize_test tests/json_serialize_test tests/list_test tests/map_test tests/primitive_test tests/string_test)	
-	INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/tests")
+	INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/tests")
 	SET(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} check)
 endif(BUILD_UNITTESTS)
 
