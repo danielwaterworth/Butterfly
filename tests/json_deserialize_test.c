@@ -230,7 +230,6 @@ START_TEST (test_string_2) {
 START_TEST (test_map_1) {
     STR_INIT(map_test, "{\"hello\":\"world\"}", 17);
     object *obj = object_from_json(map_test);
-    object *m = object_map();
     STR_INIT(key_str, "hello", 5);
     STR_INIT(val_str, "world", 5);
     object *key = object_str(key_str);
@@ -243,7 +242,6 @@ START_TEST (test_map_1) {
 START_TEST (test_map_2) {
     STR_INIT(map_test, "{\"hello\":\"world\", \"something\":null}", 35);
     object *obj = object_from_json(map_test);
-    object *m = object_map();
     STR_INIT(key_str, "hello", 5);
     STR_INIT(val_str, "world", 5);
     object *key = object_str(key_str);

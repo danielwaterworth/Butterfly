@@ -33,6 +33,7 @@ static list *free_leaf(list *leaf) {
     assert(leaf->type == LEAF);
     object_free(leaf->data.leaf);
     free(leaf);
+    return NULL;
 }
 
 static int32_t node_length(list *l) {
@@ -167,6 +168,7 @@ static list *list_ptr_remove(list *l, int32_t i) {
         }
         l->data.branch.nodes -= 1;
     }
+    return NULL;
 }
 
 void list_remove(finger_branch *branch, int32_t i) {

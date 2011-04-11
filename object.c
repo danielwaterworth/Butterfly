@@ -17,6 +17,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/* for asprintf */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -170,6 +172,7 @@ uint32_t object_hash(object *obj) {
         case OBJECT_STR:
             return object_str_hash(obj);
     };
+    return -1; //TODO: check for a better nothing matched return value
 }
 
 bool object_eq(object *a, object *b) {
@@ -187,6 +190,7 @@ bool object_eq(object *a, object *b) {
         case OBJECT_STR:
             return str_strcmp(a->data.str, b->data.str) == 0;
     };
+    return false;
 }
 
 static bool dec_ref(object *obj) {
@@ -243,6 +247,7 @@ object *object_copy(object *obj) {
         case OBJECT_MAP:
             return object_map_copy(obj);
     };
+    return NULL;
 }
 
 bool object_bool_get(object *obj) {
@@ -332,8 +337,9 @@ bool object_iterator_hasnext(object_iterator *it) {
     if (it->dst->type == OBJECT_MAP) {
         return it->pos < it->dst->data.m.sz - 1;
     } else if (it->dst->type == OBJECT_LIST) {
-        return it->pos < object_list_length(it->dst);
+        return (int64_t) it->pos < object_list_length(it->dst);
     }
+    return false;
 }
 
 object *object_iterator_getnext(object_iterator *it) {
@@ -351,6 +357,7 @@ object *object_iterator_getnext(object_iterator *it) {
     if (it->dst->type == OBJECT_LIST) {
         return object_list_get(it->dst, (it->pos)++);
     }
+    return NULL;
 }
 
 static size_t object_join_sz(object *obj) {
@@ -374,7 +381,7 @@ static void object_join_write(object *obj, char_t *str) {
     if (obj->type == OBJECT_STR) {
         str_strcpy(str, obj->data.str);
     } else {
-        size_t i;
+        int32_t i;
         for (i = 0; i < object_list_length(obj); ++i) {
             object *item = object_list_get(obj, i);
             object_join_write(item, str);
@@ -632,6 +639,7 @@ static uint32_t object_to_json_len(object *obj, bool pretty) {
         case OBJECT_MAP:
             return map_to_json_len(obj, pretty);
     };
+    return 0;
 }
 
 static uint32_t object_to_json_write(char_t *str, object *obj, bool pr) {
@@ -661,6 +669,7 @@ static uint32_t object_to_json_write(char_t *str, object *obj, bool pr) {
         case OBJECT_MAP:
             return map_to_json_write(str, obj, pr);
     };
+    return 0;
 }
 
 char_t *object_to_json(object *obj, bool pretty) {

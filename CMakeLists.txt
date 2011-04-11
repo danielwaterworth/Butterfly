@@ -17,6 +17,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET(EXTRA_LIBRARIES m) #libm is required for pow and other math functions
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wextra -fPIC")
 
 OPTION(USE_ICU "Use the ICU Library for Unicode" ON)
 OPTION(BUILD_STATIC_LIB "Build the static Butterfly lib" ON)
