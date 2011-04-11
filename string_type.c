@@ -26,7 +26,7 @@ void str_convert(const char *in, char_t *out, uint32_t out_sz) {
     uint32_t i = 0;
     while (1) {
         assert((i < out_sz) && "cannot convert string, output buffer too small");
-        assert(in[i] < 128);
+        assert(((const unsigned char) in[i]) < 128); 
         out[i] = in[i];
         if (in[i] == 0) {
             return;
@@ -84,6 +84,7 @@ int str_strcmp(const char_t *a, const char_t *b) {
 }
 
 uint32_t str_next(const char_t *str, uint32_t *i, uint32_t sz) {
+    sz = sz;
     return str[(*i)++];
 }
 
@@ -93,6 +94,7 @@ void str_append(char_t *str, uint32_t *i, uint32_t ch) {
 }
 
 short str_encoding_length(uint32_t ch) {
+    ch = ch;
     return 1;
 }
 
